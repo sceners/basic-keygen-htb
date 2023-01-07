@@ -1,0 +1,296 @@
+     ___     ___          ___     ___          ___         ___         ___
+    /  /\   /__/\        /  /\   /__/\        /  /\       /  /\       /  /\
+   /  /:/   \  \:\      /  /::\  \  \:\      /  /::\     /  /::\     /  /::|
+  /  /:/     \  \:\    /  /:/\:\  \  \:\    /  /:/\:\   /  /:/\:\   /  /:|:|
+ /  /::\ ___  \__\:\  /  /::\ \:\  \__\:\  /  /::\ \:\ /  /::\ \:\ /  /:/|:|__
+/__/:/\:\  /\ /  /::\/__/:/\:\ \:\ /  /::\/__/:/\:\ \:/__/:/\:\_\:/__/:/_|::::\
+\__\/  \:\/://  /:/\:\  \:\ \:\/://  /:/\:\  \:\ \:\_\\__\/  \:\/:\__\/  /~~/:/
+     \__\:://  /:/\ \:\  \:\ \:://  /:/\ \:\  \:\ \:\      \__\::/      /  /:/
+     /  /://  /:/  \_\/\  \:\/://  /:/  \_\/\  \:\_\/      /  /:/      /  /:/
+    /__/://__/:/        \  \:://__/:/        \  \:\       /__/:/      /__/:/
+    \__\/ \__\/          \__\/ \__\/          \__\/       \__\/       \__\/
+                                                            www.htb.team.prv.pl
+
+Title:    [Tworzymy.pierwszego.keygena........................................]
+Topic:    [Coding.............................................................]
+Author:   [FiNS.......................]   E-mail: [finsss@wp.pl...............]
+Packager: [FiNS.......................]   Date:   [2003.......................]
+
+         D  O  N  '  T     T  R  Y     T  O     B  E  A  T     U  S  !
+_______________________________________________________________________________
+
+1. Wstêp
+
+Jak siê pewnie domyœlasz, ten tekst jest o tworzeniu keygenów. Piszê go z myœl¹ o pocz¹tkuj¹cych, którzy czêsto nie wiedz¹ jak siê do tego zabraæ. Je¿eli nie masz z tym ¿adnych problemów, to raczej nie dowiesz siê niczego nowego z tego tutka. D³ugo myœla³em do czego by tu zrobiæ tego keygena i doszed³em do wniosku, ¿e na pocz¹tek nale¿y wzi¹æ coœ prostego. Poszuka³em na dysku i znalaz³em: CrackMe2 by massh^CookieCrK. Bardzo proœciutkie CrackMe generuj¹ce seriala na podstawie nicka i równoczeœnie pierwsze CrackMe tego typu, które z³ama³em :), mi³o powspominaæ. Ale dobra, koniec tego glêdzenia i zabieramy siê do roboty.
+
+2. Zabezpieczenie
+
+Pewnie z³amiesz to szybko i bez ¿adnych problemów. Prog u¿ywa GetWindowTextA, a najwa¿niejsze instrukcje znajduj¹ siê w tym callu:
+
+0040117D   CALL 00401261
+
+Jest tam taki kod:
+
+00401261   MOV   EAX,[00402060]
+00401266   CMP   [00402064],EAX     ;d³ugoœæ name i serial
+0040126C   JNZ   0040129D           ;musi byæ taka sama
+0040126E   XOR   EAX,EAX
+00401270   MOV   EDI,[ESP+04]       ;adres name do edi
+00401274   MOV   ESI,[ESP+08]       ;adres seriala do esi
+00401278   MOVZX EBX,BYTE PTR [EDI] ;bajt z name do ebx
+0040127B   MOVZX EDX,BYTE PTR [ESI] ;bajt z seriala do esi
+0040127E   CMP   DL,30
+00401281   JL    0040129D
+00401283   CMP   DL,39
+00401286   JG    0040129D  ;czy serial sk³ada siê z liczb
+00401288   SUB   DL,30
+0040128B   AND   EBX,0F    ;obrabianie litery z name
+0040128E   SHR   BL,1
+00401290   SUB   BL,DL     ;litera po przeróbce musi byæ
+00401292   JNZ   0040129D  ;taka sama jak cyfra z seriala
+00401294   INC   EDI
+00401295   INC   ESI
+00401296   CMP   BYTE PTR [EDI],00  ;powtarzaj ze
+00401299   JNZ   00401278           ;wszystkimi znakami
+0040129B   JMP   004012A1
+0040129D   XOR   EAX,EAX
+0040129F   JMP   004012A6
+004012A1   MOV   EAX,00000001
+004012A6   RET
+
+Poprawny serial dla mojego name to 3471. Jak widaæ 1 cyfra seriala odpowiada 1 literze z name. Teraz wiemy jak generowany jest serial, wiêc pora zabraæ siê za keygena...
+
+3. Algo obliczaj¹ce seriala
+
+Na pocz¹tku opracujemy algorytm generuj¹cy seriala (w tym przypadku 1 min :)), a póŸniej napiszemy resztê kodu. Za³ó¿my, ¿e w DL mamy literê z name. Aby znaleŸæ cyfrê z seriala odpowiadaj¹c¹ tej literze, mo¿emy u¿yæ takiego kodu:
+
+and   edx, 0Fh
+shr   edx, 1
+add   edx, 30h
+
+Trzeba to zmodyfikowaæ tak, aby zastosowaæ to do ka¿dej litery z nicka. Ca³oœæ wygl¹da tak:
+
+mov     ebx, offset serial   ;tu zapiszemy wygenerowanego seriala
+mov     eax, offset myname   ;tu jest nasze name
+nastepny:
+movzx   edx, byte ptr [eax]  ;litera z name do edx
+and     edx, 0Fh   ;obrabianie name
+shr     edx, 1
+add     edx, 30h
+mov     [ebx], dl  ;kolejne cyfry seriala id¹ do ebx
+inc     eax
+inc     ebx
+cmp     byte ptr [eax], 0    ;sprawdŸ czy koniec name
+jne     nastepny   ;jeœli nie to obrób nastêpn¹ literê
+
+Ten kod bêdzie najwa¿niejsz¹ czêœci¹ naszego proga.
+
+4. Wygl¹d keygena
+
+Teraz musimy zabraæ siê za okienko dialogowe. Najpierw zrobimy plik z zasobami, który odpowiada za jego wygl¹d. Mo¿e bawi³eœ siê kiedyœ programikiem takim jak Restorator, czy Resource Hacker. Pozwalaj¹ one zmieniaæ wygl¹d innych progów, a nam mog¹ nieco u³atwiæ ustalenie wygl¹du okna keygena. Ja u¿ywam tych dwóch progów o których wspomnia³em wczeœniej i polecam je równie¿ tobie. Jak chcesz zmieniaæ wygl¹d okna to odpalasz ResHackera i ³adujesz jakiœ programik który jest okienkiem dialogowym, np. calc.exe. Klikasz np. na Dialog i na 104. Na pocz¹tku wywalasz wszystko co jest w tym oknie. PóŸniej klikasz prawym na puste okno i ustawiasz jego w³aœciwoœci w "Edit Dialog". PóŸniej znowu prawym na puste okno i "Insert control". Tu mo¿esz dodawaæ przyciski, pola edycyjne i inne bajery. Rozmiary kontrolek i okna zmieniasz myszk¹, rozci¹gaj¹c to co chcesz do odpowiednich rozmiarów. Jak ju¿ wszystko pozmieniasz to zapisujesz to okno w pliku res. PóŸniej w Restoratorze mo¿esz to sobie zamieniæ na rc i jeszcze wprowadziæ jakieœ zmiany. Nie polecam zapisywania zasobów w ResHackerze do plików rc, bo nie s¹ one kompatybilne z masm32, w³aœnie dlatego przydaje siê Restorator, który generuje pliki rc kompatybilne z tym kompilatorem. W³aœciwie to ResHacker nie jest wcale potrzebny, bo wszystko mo¿na zrobiæ w drugim progu, ale mi siê wydaje, ¿e ResHacker jest wygodniejszy w obs³udze. Wybór pozostawiam tobie. Jak chcesz, to mo¿esz wcale nie u¿ywaæ tego typu progów. Ja u³atwiam ci sprawê i daje gotowy plik rc z opisem zasobów do naszego keygena. Wygl¹da on tak:
+
+#include <c:\masm32\include\resource.h>
+10 DIALOGEX 11, 11, 213, 74, 0
+STYLE DS_SETFONT | DS_SETFOREGROUND | DS_CENTER | WS_MINIMIZEBOX | WS_POPUPWINDOW | WS_VISIBLE | WS_CAPTION
+CAPTION "CrackMe2 by massh^CookieCrK - keygen"
+FONT 8, "MS SANS SERIF"
+{
+ GROUPBOX "", 0, 2, -1, 209, 72
+ EDITTEXT 100, 6, 16, 201, 12, NOT WS_BORDER | WS_GROUP, WS_EX_STATICEDGE
+ EDITTEXT 101, 6, 38, 201, 12, ES_READONLY | NOT WS_BORDER | WS_GROUP, WS_EX_STATICEDGE
+ CTEXT "Name:", 309, 6, 7, 22, 8
+ CTEXT "Serial:", 309, 5, 29, 22, 8
+ PUSHBUTTON "&Generate", 1, 6, 55, 44, 12, BS_CENTER | WS_GROUP, WS_EX_STATICEDGE
+ PUSHBUTTON "&About", 103, 55, 55, 44, 12, BS_CENTER | WS_GROUP, WS_EX_STATICEDGE
+ PUSHBUTTON "&Exit", 104, 104, 55, 44, 12, BS_CENTER | WS_GROUP, WS_EX_STATICEDGE
+ LTEXT "Created by FiNS", 0, 154, 56, 53, 10, WS_DISABLED
+}
+30 ICON "fins.ico"
+
+Ikonkê daj tak¹ jak¹ masz i zmieñ tu jej nazwê. Popraw te¿ œcie¿kê do kompilatora (je¿eli jest taka potrzeba). Ca³oœæ zapisz w pliku o nazwie np. keygen.rc. To by by³o na tyle w sprawie wygl¹du naszego proga. 
+
+5. Piszemy kod
+
+Otwórz sobie dowolny edytor tekstu np. notepad albo Quick Editor do³¹czony do masma i napisz to, co zwykle jest na pocz¹tku proga:
+
+.486
+.model flat, stdcall
+option casemap:none
+
+include \masm32\include\windows.inc
+include \masm32\include\kernel32.inc
+include \masm32\include\user32.inc
+include \masm32\include\gdi32.inc
+includelib \masm32\lib\kernel32.lib
+includelib \masm32\lib\user32.lib
+includelib \masm32\lib\gdi32.lib
+
+I jeszcze sekcjê .const:
+
+.const
+DIALOG_ID   =10
+ICON_ID     =30
+EDITN_ID    =100
+EDITS_ID    =101
+GENERATE_ID =1
+ABOUT_ID    =103
+EXIT_ID     =104
+
+W³aœciwie to deklaracja sta³ych nie jest konieczna, ale to bardzo u³atwia dalsze pisanie. Nie musisz pamiêtaæ liczb tylko nazwy, które sam nadajesz. Dziêki temu, ¿e przycisk Generate ma ID=1, to naciœniêcie entera zadzia³a tak, jakbyœmy nacisnêli w³aœnie ten przycisk. Mam nadziejê, ¿e wiesz, o co mi chodzi. Teraz piszemy sekcje z danymi:
+
+.data?
+hInstance   dd  4 dup (?)
+myname      db  64 dup (?)
+serial      db  64 dup (?)
+
+.data
+tytulmsgbox db  'About',0
+tekstmsgbox db  'CrackMe2 by massh^CookieCrK - keygen',13,10
+            db  ' ',13,10
+            db  'Created by:',13,10
+            db  'FiNS - finsss@wp.pl',0
+
+hInstance jest nam potrzebne do utworzenia okienka dialogowego. Do myname bêdziemy pobieraæ podanego nicka, a w serial zapisywaæ wygenerowany numerek. Po klikniêciu na About bêdzie siê pokazywaæ messagebox z infem z sekcji .data. To wszystkie dane jakie s¹ nam potrzebne. Mo¿emy ju¿ przyst¹piæ do pisania kodu:
+
+.code
+start:
+    push    0
+    call    GetModuleHandleA
+    mov     hInstance, eax
+
+    push    0
+    push    offset DlgProc
+    push    0
+    push    DIALOG_ID
+    push    hInstance
+    call    DialogBoxParamA
+
+    push    0
+    call    ExitProcess
+
+Je¿eli nie pisa³eœ wczeœniej ¿adnego proga, to mo¿e teraz pomyœlisz, ¿e coœ ten ExitProcess za szybko. Nie ma niczego, co by generowa³o seriala, w³aœciwie to niczego nie ma. Tak naprawdê wszystko dzieje siê w DlgProc, któr¹ zaraz napiszemy.
+
+DlgProc proc uses esi edi ebp ebx, hDlg:DWORD, uMsg:DWORD, wParam:DWORD,
+        lParam:DWORD 
+;...tu bêdziemy pisaæ resztê kodu...
+powrot:
+xor eax, eax
+ret
+DlgProc     endp
+end start
+
+Je¿eli w tej chwili masz zrobione wszystko, co opisa³em do tej pory, to mo¿esz zapisaæ obecny kod w pliku np. keygen.asm (proponujê daæ tak¹ sam¹ nazwê jak¹ da³eœ plikowi .rc) i skompilowaæ ca³oœæ. W tej chwili nasz prog powinien siê ju¿ uruchomiæ, ale nic nie bêdzie robi³, nawet nie bêdzie siê go da³o normalnie zamkn¹æ, jedynie przez ctrl+alt+del. Warto jednak zobaczyæ jak wygl¹da i czy rzeczywiœcie siê uruchamia (bêdziesz wiedzia³, czy czegoœ nie namiesza³eœ po drodze :)). Ca³oœæ moim skromnym zdaniem najlepiej kompilowaæ plikiem wsadowym makeit.bat, który zawiera takie instrukcje:
+
+set file=keygen
+\masm32\bin\rc /v %file%.rc
+\masm32\bin\ml /c /coff /Cp %file%.asm
+\masm32\bin\link.exe /SUBSYSTEM:WINDOWS /LIBPATH:\masm32\lib
+                     %file%.obj %file%.res
+del *.obj
+del *.res
+%file%.exe
+
+Je¿eli musisz, to popraw œcie¿kê do masma i nazwê pliku (tu: "keygen"). Jeœli prog siê nie kompiluje, to sprawdŸ, czy nie znalaz³o ci jakichœ b³êdów przy kompilacji. Jak znalaz³o, to przeczytaj w której lini, porównaj z tym co ja tu napisa³em i popraw b³¹d. Zak³adam, ¿e wszystko siê uda³o i program jest w³¹czony. Mo¿esz siê napatrzeæ i posprawdzaæ jak wszystko dzia³a (a raczej jak nie dzia³a ;)) Zamknij keygena i wracamy do pisania kodu. Ustaw kursor linijkê przed retem, w miejscu gdzie napisa³em ;...tu bêdziemy... (chyba nie muszê mówiæ, ¿e to masz usun¹æ) i piszemy w tym miejscu taki kod:
+
+    cmp     uMsg, WM_INITDIALOG
+    jz      initdlg
+    cmp     uMsg, WM_CLOSE
+    jz      close
+    cmp     uMsg, WM_COMMAND
+    jz      wmcommand
+    cmp     uMsg, WM_MOUSEMOVE
+    je      move
+
+Nie wiesz, co to jest? Nie przejmuj siê, bo ja te¿ nie wiem ;) a tak na serio, to tu jest sprawdzane zdarzenie jakie zosta³o wykonane (np. czy klikniêto na przycisk Generate itp.). WM_INITDIALOG wykonuje siê podczas w³¹czania okienka. Bêdzie nam potrzebne, bo my chcemy mieæ na pasku tytu³owym nasz¹ ikonkê, a nie jakiœ œmieæ z wina. WM_CLOSE s³u¿y do zamykania proga. WM_COMMAND to np. naciœniêcie jakiegoœ przycisku. WM_MOUSEMOVE pos³u¿y nam do zrobienia takiej ma³ej i fajnej rzeczy, mianowicie bêdziemy mogli poruszaæ oknem ³api¹c je w dowolnym miejscu (poza przyciskami i polem edit), a nie tylko za pasek tytu³owy. Po tych instrukcjach zostawiamy naszego xora i reta, a za nim piszemy dalszy kod:
+
+initdlg:
+    push    ICON_ID
+    push    hInstance
+    call    LoadIconA
+
+    push    eax
+    push    1
+    push    WM_SETICON
+    push    hDlg           ;ten kod wrzuca nasz¹
+    call    SendMessageA   ;ikonkê na pasek tytu³owy
+    jmp     powrot
+
+close:
+    push    0
+    push    hDlg
+    call    EndDialog      ;zamykanie okna
+    jmp     powrot
+
+move:
+    cmp     wParam, 1
+    je      moveform
+    jmp     powrot
+moveform:
+    call    ReleaseCapture
+    push    0
+    push    0F012h
+    push    WM_SYSCOMMAND
+    push    hDlg           ;poruszanie oknem,
+    call    SendMessageA   ;o którym mówi³em wczeœniej
+    jmp     powrot
+
+wmcommand:
+    cmp     wParam, GENERATE_ID
+    jz      go
+    cmp     wParam, ABOUT_ID
+    jz      about
+    cmp     wParam, EXIT_ID  ;sprawdza czy naciœniêto
+    jz      close            ;któryœ z przycisków
+    jmp     powrot
+
+about:
+    push    MB_ICONINFORMATION
+    push    offset tytulmsgbox
+    push    offset tekstmsgbox
+    push    hDlg
+    call    MessageBoxA   ;wyœwietlanie okienka about
+    jmp     powrot
+
+Teraz jest najwa¿niejsza czêœæ proga. Wykonuje siê ona po naciœniêciu Generate lub entera. Jej g³ówn¹ czêœæ napisaliœmy ju¿ wczeœniej, w trzecim punkcie. Teraz dodajemy przed ni¹ pobranie tekstu z pierwszego pola edit i wpisanie wyniku do drugiego, nieaktywnego pola edit.
+
+go:
+    push    255
+    push    offset myname
+    push    EDITN_ID
+    push    hDlg
+    call    GetDlgItemTextA    ;pobieranie name
+
+    test    eax, eax   ;czy coœ wpisano
+    jz      koniec     ;jeœli nie to nie obliczaj
+    cmp     eax, 64    ;nasze name nie mo¿e byæ wiêksze
+    jge     koniec     ;ani równe ni¿ 64 znaki
+;je¿eli by tego nie by³o, a user wpisa³by
+;za d³ugiego nicka, to program by siê wiechn¹³
+
+    mov     ebx, offset serial ;algorytm obliczaj¹cy seriala
+    mov     eax, offset myname ;by³ on opisany wczeœniej
+nastepny:
+    movzx   edx, byte ptr [eax]
+    and     edx, 0Fh
+    shr     edx, 1
+    add     edx, 30h
+    mov     [ebx], dl
+    inc     eax
+    inc     ebx
+    cmp     byte ptr [eax], 0
+    jne     nastepny
+    xor     eax, eax
+    mov     [ebx], eax
+                
+    push    offset serial
+    push    EDITS_ID
+    push    hDlg              ;wpisz wygenerowanego
+    call    SetDlgItemTextA   ;seriala do pola edit
+
+koniec:
+    jmp     powrot
+
+DlgProc     endp   ;jak ju¿ to masz, to nie pisz drugi raz
+end start
+
+To by by³o na tyle. W³aœnie skoñczy³eœ pisaæ swojego pierwszego keygena :D Pewnie siê cieszysz, ja te¿. Chyba nie by³o to wcale takie trudne :) Teraz mo¿esz to skompilowaæ i wypróbowaæ jak dzia³a. Spakowana ca³oœæ (keygen.asm, keygen.rc, makeit.bat, fins.ico i wersja skompilowana) powinna byæ do³¹czona do tego tekstu. Je¿eli masz jakieœ problemy ze zrobieniem tego keygena, albo jakieœ pytanka, to mail me finsss@wp.pl.
